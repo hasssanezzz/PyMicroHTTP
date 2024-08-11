@@ -123,6 +123,19 @@ def logged_route(request):
     return {"message": "This is a logged route"}
 ```
 
+### Before all
+
+If you want to run a middleware before every single request you can use the `s.beforeAll()` decorator:
+```py
+@s.beforeAll()
+def logger(next):
+    def handler(request):
+        verb, path = request['verb'], request['path']
+        print(f'{datetime.datetime.now()} {verb} {path}')
+        return next(request)
+    return handler
+```
+
 ### Middleware chaining
 You can chain multiple middlwares together
 ```py

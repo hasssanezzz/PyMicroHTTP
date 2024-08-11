@@ -5,7 +5,7 @@ from server import Server
 JWT_SECRET = '123'
 s = Server(port=int(sys.argv[1]))
 
-
+@s.beforeAll()
 def loggerMiddleware(next):
     def handler(request):
         verb, path = request['verb'], request['path']
@@ -23,16 +23,16 @@ def authMiddleware(next):
         except: return "token can not be decoded", 401
     return handler
 
-@s.register('GET /ping', loggerMiddleware)
+@s.register('GET /ping')
 def handlePing(request):
     return {"resp": "pong"}, 418
 
-@s.register('GET /auth', [loggerMiddleware, authMiddleware])
+@s.register('GET /auth', authMiddleware)
 def handleAuth(request):
     username = request['auth_payload']['username']
     return f"Hello {username}!!"
 
-@s.register('POST /auth', loggerMiddleware)
+@s.register('POST /auth')
 def handleLogin(request):
     username = request['headers'].get('username', '')
     if not username:

@@ -3,6 +3,7 @@ from http.client import responses
 
 class Server:
     routes = {}
+    beforeAllMiddlewares = []
 
     def __init__(self, host: str = 'localhost', port: int = 9090) -> None:
         self.host = host
@@ -31,13 +32,19 @@ class Server:
         def decorator(func):
             if middleware:
                 if isinstance(middleware, list):
-                    self.routes[path] = self.__chain_middleware(middleware, func)
+                    self.routes[path] = self.__chainMiddlewares(middleware, func)
                 else:
                     self.routes[path] = middleware(func)
             else:
                 self.routes[path] = func
                 
         return decorator
+    
+    def beforeAll(self):
+        def decorator(func):
+            self.beforeAllMiddlewares.append(func)
+        return decorator
+            
 
     def __handleConnection(self, conn: socket.socket, addr):
         with conn:
@@ -51,7 +58,14 @@ class Server:
                 pathkey = f'{parsed["verb"]} {parsed["path"]}'
 
                 if pathkey in self.routes:
-                    result = self.routes[pathkey](parsed)
+                    handler = self.routes[pathkey]
+                    
+                    if self.beforeAllMiddlewares:
+                        chainedHandler = self.__chainMiddlewares(self.beforeAllMiddlewares, handler)
+                        result = chainedHandler(parsed)
+                    else:
+                        result = handler(parsed)
+                    
                     if not isinstance(result, tuple):
                         return conn.sendall(self.__writeReponse(self.__checkIfResultIsDict(result)))
                     resultLen = len(result)
@@ -114,7 +128,7 @@ class Server:
         pattern = r'^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) /[^\s]*$'
         return bool(re.match(pattern, path))
 
-    def __chain_middleware(self, middlewares, func):
+    def __chainMiddlewares(self, middlewares, func):
         for middleware in reversed(middlewares):
             func = middleware(func)
         return func
