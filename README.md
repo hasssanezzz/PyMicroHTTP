@@ -12,16 +12,11 @@ PyMicroHTTP is a lightweight, flexible HTTP framework built from scratch in Pyth
 
 ## Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/pymicrohttp.git
-   cd pymicrohttp
-   ```
-
-2. Install the required dependencies:
-   ```
-   pip install pyjwt
-   ```
+Clone the repository:
+```
+$ git clone https://github.com/yourusername/pymicrohttp.git
+$ cd pymicrohttp
+```
 
 ## Quick Start
 
@@ -51,26 +46,44 @@ curl http://localhost:8080/hello
 Routes are defined using the `@s.register` decorator:
 
 ```python
-@s.register('GET /users/{id}')
-def get_user(request):
-    user_id = request['path'].split('/')[-1]
-    return {"user_id": user_id}
+@s.register('GET /ping')
+def ping_handler(request):
+    return "pong"
 ```
 
-## Middleware
-
-Middleware functions can be used to add functionality to your routes:
+Example:
 
 ```python
-def log_middleware(next):
-    def handler(request):
-        print(f"Request: {request['verb']} {request['path']}")
-        return next(request)
-    return handler
+@s.register('POST /login')
+def login_handler(request):
+    try:
+        body = json.loads(request['body'])
+        if 'username' not in body or 'password' not in body:
+            # do somthing
+    except:
+        return { 'error': 'invalid data' }
+```
 
-@s.register('GET /protected', log_middleware)
-def protected_route(request):
-    return {"message": "This is a protected route"}
+## Request Object
+
+The request object is a dict containing these key and value:
+```py
+{
+    'verb': ...
+    'path': ...
+    'headers': ...
+    'body': ...
+}
+```
+
+You can access it via the handler:
+```py
+@s.register('GET /ping')
+def ping_handler(request):
+    # accessing request headers
+    if 'double' in request['headers']:
+        return "pong-pong"
+    return "pong"
 ```
 
 ## Response Handling
@@ -93,6 +106,42 @@ The framework supports different types of responses:
    # or
    return "Created", 201, {"Location": "/resource/1"}
    ```
+
+
+## Middleware
+Middleware functions can be used to add functionality to your routes:
+
+```python
+def log_middleware(next):
+    def handler(request):
+        print(f"Request: {request['verb']} {request['path']}")
+        return next(request)
+    return handler
+
+@s.register('GET /logged', log_middleware)
+def logged_route(request):
+    return {"message": "This is a logged route"}
+```
+
+### Middleware chaining
+You can chain multiple middlwares together
+```py
+def log_middleware(next):
+    def handler(request):
+        # do your loggin logic here
+        return next(request)
+    return handler
+
+def auth_middleware(next):
+    def handler(request):
+        # do your auth logic here
+        return next(request)
+    return handler
+
+@s.register('GET /protected', [log_middleware, auth_middleware])
+def protected_route(request):
+    return {"message": "This is a protected route"}
+```
 
 ## Running the Server
 
