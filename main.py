@@ -5,20 +5,34 @@ from server import Server
 JWT_SECRET = '123'
 s = Server(port=int(sys.argv[1]))
 
-@s.register('GET /ping')
+
+def loggerMiddleware(next):
+    def handler(request):
+        verb, path = request['verb'], request['path']
+        print(f'{datetime.datetime.now()} {verb} {path}')
+        return next(request)
+    return handler
+
+def authMiddleware(next):
+    def handler(request):
+        token = request['headers'].get('Authorization', '')
+        if not token: return "token not found", 401
+        try:
+            request['auth_payload'] = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+            return next(request)
+        except: return "token can not be decoded", 401
+    return handler
+
+@s.register('GET /ping', loggerMiddleware)
 def handlePing(request):
     return {"resp": "pong"}, 418
 
-@s.register('GET /auth')
+@s.register('GET /auth', [loggerMiddleware, authMiddleware])
 def handleAuth(request):
-    token = request['headers'].get('Authentication', '')
-    if not token: return "token not found", 401
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
-        return f"marhaban {payload['username']}"
-    except: return "token can not be decoded", 401
+    username = request['auth_payload']['username']
+    return f"Hello {username}!!"
 
-@s.register('POST /auth')
+@s.register('POST /auth', loggerMiddleware)
 def handleLogin(request):
     username = request['headers'].get('username', '')
     if not username:
@@ -29,7 +43,7 @@ def handleLogin(request):
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
-    return '', 200, { "Authentication": token }
+    return '', 200, { "Authorization": token }
 
 if __name__ == "__main__":
     s.start_server()

@@ -24,11 +24,19 @@ class Server:
             raise ValueError('invalid provided path:', path)
         self.routes[path] = handler
 
-    def register(self, path):
+    def register(self, path, middleware = None):
         if not self.__isPathValid(path):
-            raise ValueError('invalid provided path:', path)
+            raise ValueError('invalid provided path:', path)  
+                  
         def decorator(func):
-            self.routes[path] = func
+            if middleware:
+                if isinstance(middleware, list):
+                    self.routes[path] = self.__chain_middleware(middleware, func)
+                else:
+                    self.routes[path] = middleware(func)
+            else:
+                self.routes[path] = func
+                
         return decorator
 
     def __handleConnection(self, conn: socket.socket, addr):
@@ -105,3 +113,8 @@ class Server:
     def __isPathValid(self, path: str) -> bool:
         pattern = r'^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) /[^\s]*$'
         return bool(re.match(pattern, path))
+
+    def __chain_middleware(self, middlewares, func):
+        for middleware in reversed(middlewares):
+            func = middleware(func)
+        return func
