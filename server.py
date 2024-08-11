@@ -102,3 +102,10 @@ class Server:
         if not self.isPathValid(path):
             raise ValueError('invalid provided path:', path)
         self.routes[path] = handler
+
+    def register(self, path):
+        if not self.isPathValid(path):
+            raise ValueError('invalid provided path:', path)
+        def decorator(func):
+            self.routes[path] = func
+        return decorator
