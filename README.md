@@ -12,10 +12,9 @@ PyMicroHTTP is a lightweight, flexible HTTP framework built from scratch in Pyth
 
 ## Installation
 
-Clone the repository:
+You can install the package via pip:
 ```
-$ git clone https://github.com/yourusername/pymicrohttp.git
-$ cd pymicrohttp
+$ pip install pymicrohttp
 ```
 
 ## Quick Start
@@ -23,7 +22,7 @@ $ cd pymicrohttp
 Here's a simple example to get you started:
 
 ```python
-from server import Server
+from pymicrohttp.server import Server
 
 s = Server(port=8080)
 
