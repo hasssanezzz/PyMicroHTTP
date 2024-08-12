@@ -3,9 +3,9 @@ import jwt
 from pymicrohttp.server import Server
 
 JWT_SECRET = '123'
-s = Server(port=int(sys.argv[1]))
+s = Server()
 
-@s.beforeAll()
+@s.before_all()
 def loggerMiddleware(next):
     def handler(request):
         verb, path = request['verb'], request['path']
@@ -46,4 +46,4 @@ def handleLogin(request):
     return '', 200, { "Authorization": token }
 
 if __name__ == "__main__":
-    s.start_server()
+    s.start_server(port=int(sys.argv[1]))
