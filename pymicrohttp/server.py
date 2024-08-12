@@ -1,8 +1,9 @@
 import re, socket, threading, json
+from typing import Callable
 from http.client import responses
 
 class Server:
-    routes = {}
+    routes: dict[str, Callable] = {}
     before_all_middlewares = []
 
 
@@ -54,33 +55,41 @@ class Server:
 
                 try:
                     reqstr = data.rstrip(b'\x00').decode()
-                    parsed = self.__parse_request(reqstr)
+                    parsed_request = self.__parse_request(reqstr)
                 except:
                     return conn.sendall(self.__create_response('can not parse request', 400))
 
-                path_key = parsed["verb"] + ' ' + parsed["path"]
+                path_key = parsed_request["verb"] + ' ' + parsed_request["path"]
 
-                if path_key in self.routes:
-                    try:
-                        result = self.__create_handler(self.routes[path_key])(parsed)
-                        if not isinstance(result, tuple):
-                            return conn.sendall(self.__create_response(self.__serialize_response(result)))
+                try:
+                    parsed_request['query'] = self.__parse_query_params(parsed_request['path'])
+                    parsed_request['path'] = self.__remove_qparams(parsed_request['path'])
+                    handler, params = self.__find_handler(parsed_request['verb'], parsed_request['path'])
 
-                        resultLen = len(result)
-                        if resultLen == 3:
-                            response, code, headers = result
-                            return conn.sendall(self.__create_response(self.__serialize_response(response), code, headers))
-                        if resultLen == 2:
-                            response, code = result
-                            return conn.sendall(self.__create_response(self.__serialize_response(response), code))
-                        # 500 - invalid number of return values
-                        conn.sendall(self.__create_response('', 500))
-                        raise ValueError('internal server error: handler returned bad number of values:', resultLen)
-                    except Exception as e:
-                        self.__create_internal_error_response(conn)
-                        raise RuntimeError('internal server error:', e)
-                # 404 - route not found
-                self.__create_internal_error_response(conn, '', 404)
+                    # 404 - route not found
+                    if not handler:
+                        return self.__create_internal_error_response(conn, '', 404)
+
+                    if params:
+                        parsed_request['params'] = params or {}
+
+                    result = self.__create_handler(handler)(parsed_request)
+                    if not isinstance(result, tuple):
+                        return conn.sendall(self.__create_response(self.__serialize_response(result)))
+
+                    resultLen = len(result)
+                    if resultLen == 3:
+                        response, code, headers = result
+                        return conn.sendall(self.__create_response(self.__serialize_response(response), code, headers))
+                    if resultLen == 2:
+                        response, code = result
+                        return conn.sendall(self.__create_response(self.__serialize_response(response), code))
+                    # 500 - invalid number of return values
+                    conn.sendall(self.__create_response('', 500))
+                    raise ValueError('internal server error: handler returned bad number of values:', resultLen)
+                except Exception as e:
+                    self.__create_internal_error_response(conn)
+                    raise RuntimeError('internal server error:', e)
 
 
     def __create_handler(self, handler):
@@ -89,13 +98,16 @@ class Server:
         else:
             return handler
 
+
     def __create_internal_error_response(self, conn: socket.socket, msg = '', code = 500):
         conn.sendall(self.__create_response(msg, code))
+
 
     def __serialize_response(self, result):
         if isinstance(result, dict) or isinstance(result, list):
             return json.dumps(result)
         return result
+
 
     def __create_response(self, resp, code = 200, headers = {}, contentType = 'application/json'):
         resp = resp if isinstance(resp, str) else str(resp)
@@ -109,6 +121,7 @@ class Server:
             header, value = str(header), str(value)
             http_resp += f'{header}: {value}\r\n'
         return (http_resp + f'\r\n{resp}').encode()
+
 
     def __parse_request(self, request_string: str):
         headers = {}
@@ -141,3 +154,62 @@ class Server:
         for middleware in reversed(middlewares):
             func = middleware(func)
         return func
+
+
+    def __match_path(self, pattern: str, path: str) -> dict | None:
+        results = {}
+        pattern_chunks, path_chunks = pattern.split('/'), path.split('/')
+        if len(pattern_chunks) != len(path_chunks):
+            return None
+
+        for pattern_chunk, path_chunk in zip(pattern_chunks, path_chunks):
+            if pattern_chunk.startswith(':'):
+                param = pattern_chunk[1:]
+                results[param] = path_chunk
+            elif pattern_chunk != path_chunk:
+                return None
+
+        return results
+
+
+    def __parse_query_params(self, path: str) -> dict:
+        params = {}
+
+        parts = path.split('?', 1)
+        if len(parts) < 2:
+            return params  # No query parameters
+
+        query_string = parts[1]
+        param_pairs = query_string.split('&')
+        for pair in param_pairs:
+            if '=' in pair:
+                key, value = pair.split('=', 1)
+                params[key] = value
+            else:
+                params[pair] = ''
+        return params
+
+
+    def __remove_qparams(self, path: str) -> str:
+        try:
+            question_mark_index = path.rindex('?')
+            return path[:question_mark_index]
+        except ValueError:
+            return path
+
+
+    def __find_handler(self, verb: str, path: str):
+        fullpath = verb + ' ' + path
+        if fullpath in self.routes:
+            print(f'instant search result {fullpath}')
+            return self.routes[fullpath], {}
+
+        for route in self.routes:
+            route_verb, route_path = route.split(' ')
+            if route_verb == verb:
+                params = self.__match_path(route_path, path)
+                print(f'matching {route} with {path} -> {params}')
+                if params:
+                    return self.routes[route], params
+
+        return None, None

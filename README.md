@@ -66,12 +66,14 @@ def login_handler(request):
 ## Request Object
 
 The request object is a dict containing these key and value:
-```py
+```
 {
-    'verb': ...
-    'path': ...
-    'headers': ...
-    'body': ...
+    'verb':    ...
+    'path':    ...
+    'body':    ...
+    'headers': ... # { 'key': 'value' }
+    'params':  ... # { 'key': 'value' }
+    'query':   ... # { 'key': 'value' }
 }
 ```
 
@@ -83,6 +85,35 @@ def ping_handler(request):
     if 'double' in request['headers']:
         return "pong-pong"
     return "pong"
+```
+
+Examples:
+```py
+# say hello
+s.register('GET /hello/:name')
+def hello(request):
+    name = request['params']['name']
+    return "Hello " + name
+```
+
+```py
+# say hello `n` times
+s.register('GET /hello/:name/:n')
+def hello(request):
+    name = request['params']['name']
+    n = request['params']['n']
+    return "Hello " * int(n) + name
+```
+
+```py
+# say hello `n` times
+# read n from query params
+# with default value of 3
+s.register('GET /hello/:name/:n')
+def hello(request):
+    name = request['params']['name']
+    n = request['query'].get('n', 3)
+    return "Hello " * n + name
 ```
 
 ## Response Handling
