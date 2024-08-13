@@ -4,6 +4,34 @@ PyMicroHTTP is a lightweight, flexible HTTP framework built from scratch in Pyth
 
 __NOTE: this is a toy project and not production ready.__
 
+## Content Table
+
+### PyMicroHTTP
+
+* **[PyMicroHTTP](#pymicrohttp)**
+    * What is PyMicroHTTP? (Introduction)
+    * **[Features](#features)** (List of functionalities)
+    * **[Installation](#installation)** (How to install)
+    * **[Quick Start](#quick-start)** (Getting started example)
+        * Running the example
+    * **[Routing](#routing)** (Defining routes)
+        * Basic Routing Syntax
+        * **[Path Parameters](#path-parameters)** (Accessing dynamic parts of the URL)
+        * **[Query Parameters](#query-parameters)** (Accessing data after the '?' in the URL)
+    * **[Request Object](#request-object)** (Understanding the request data)
+        * Available properties in the request object
+        * Accessing headers, path parameters, query parameters, body and verb
+    * **[Response Handling](#response-handling)** (Sending data back to the client)
+        * Returning dictionaries (converted to JSON)
+        * Returning strings
+        * Returning custom status codes and headers
+    * **[Middleware](#middleware)** (Adding custom logic before request handling)
+        * Creating middleware functions
+        * **[Before all](#before-all)** (Running middleware before every request)
+        * **[Middleware chaining](#middleware-chaining)**
+    * **[Running the Server](#running-the-server)** (Starting the server)
+    * **[Contributing](#contributing)** (How to contribute to the project)
+
 ## Features
 
 - Built on raw TCP sockets
