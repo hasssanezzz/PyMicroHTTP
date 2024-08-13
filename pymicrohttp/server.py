@@ -201,14 +201,12 @@ class Server:
     def __find_handler(self, verb: str, path: str):
         fullpath = verb + ' ' + path
         if fullpath in self.routes:
-            print(f'instant search result {fullpath}')
             return self.routes[fullpath], {}
 
         for route in self.routes:
             route_verb, route_path = route.split(' ')
             if route_verb == verb:
                 params = self.__match_path(route_path, path)
-                print(f'matching {route} with {path} -> {params}')
                 if params:
                     return self.routes[route], params
 
