@@ -58,6 +58,12 @@ def ping_handler(request):
     return "pong"
 ```
 
+Following this syntax:
+```
+VERB /<PATH>
+```
+With a signle space separating between the verb and the request path.
+
 Example:
 
 ```python
@@ -70,6 +76,34 @@ def login_handler(request):
     except:
         return { 'error': 'invalid data' }
 ```
+
+### Path parameters
+
+You can declare dynamic path params using a colon, for example:
+```
+GET /users/:group/:channel
+```
+To read these params you can access them via the request object:
+```py
+@s.register('GET /users/:group/:channel')
+def handler(request):
+    ...
+    group = request['params']['group']
+    channel = request['params']['channel']
+    ...
+```
+
+### Query parameters
+You can read query parameters via the request obejct:
+```py
+@s.register('GET /products')
+def handler(request):
+    ...
+    name = request['query'].get('name', '')
+    category = request['query'].get('category', 'shoes')
+    ...
+```
+Note that it is better to use `.get(key, default_value)` because query params are optional and may not exist, and accessing them without the `.get()` method may result in key errors.
 
 ## Request Object
 
