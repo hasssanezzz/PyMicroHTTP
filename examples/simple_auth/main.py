@@ -2,8 +2,10 @@ import sys, datetime
 import jwt
 from pymicrohttp.server import Server
 
+
 JWT_SECRET = '123'
 s = Server()
+
 
 @s.before_all()
 def loggerMiddleware(next):
@@ -12,6 +14,7 @@ def loggerMiddleware(next):
         print(f'{datetime.datetime.now()} {verb} {path}')
         return next(request)
     return handler
+
 
 def authMiddleware(next):
     def handler(request):
@@ -23,14 +26,12 @@ def authMiddleware(next):
         except: return "token can not be decoded", 401
     return handler
 
-@s.register('GET /ping')
-def handlePing(request):
-    return {"resp": "pong"}, 418
 
 @s.register('GET /auth', authMiddleware)
 def handleAuth(request):
     username = request['auth_payload']['username']
     return f"Hello {username}!!"
+
 
 @s.register('POST /auth')
 def handleLogin(request):
@@ -44,6 +45,7 @@ def handleLogin(request):
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm='HS256')
     return '', 200, { "Authorization": token }
+
 
 if __name__ == "__main__":
     s.start_server(port=int(sys.argv[1]))
