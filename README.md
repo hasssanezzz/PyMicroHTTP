@@ -2,6 +2,8 @@
 
 PyMicroHTTP is a lightweight, flexible HTTP framework built from scratch in Python. It provides a simple way to create HTTP services without heavy external dependencies, making it ideal for learning purposes or small projects.
 
+__NOTE: this is a toy project and not production ready.__
+
 ## Features
 
 - Built on raw TCP sockets
@@ -24,14 +26,20 @@ Here's a simple example to get you started:
 ```python
 from pymicrohttp.server import Server
 
-s = Server(port=8080)
+s = Server()
 
 @s.register('GET /hello')
 def hello(request):
     return {"message": "Hello, World!"}
 
+@s.register('GET /hello/:name')
+def hello_name(request):
+    name = request['params'].get('name')
+    return {"message": f"Hello, {name}!"}
+
+
 if __name__ == "__main__":
-    s.start_server()
+    s.start_server(port=8080)
 ```
 
 Run this script, and you'll have a server running on `http://localhost:8080`. Access it with:
@@ -88,33 +96,36 @@ def ping_handler(request):
 ```
 
 Examples:
-```py
-# say hello
-s.register('GET /hello/:name')
-def hello(request):
-    name = request['params']['name']
-    return "Hello " + name
-```
 
-```py
-# say hello `n` times
-s.register('GET /hello/:name/:n')
-def hello(request):
-    name = request['params']['name']
-    n = request['params']['n']
-    return "Hello " * int(n) + name
-```
+1. Accessing headers:
+    ```py
+    # say hello
+    s.register('GET /hello/:name')
+    def hello(request):
+        name = request['params']['name']
+        return "Hello " + name
+    ```
 
-```py
-# say hello `n` times
-# read n from query params
-# with default value of 3
-s.register('GET /hello/:name/:n')
-def hello(request):
-    name = request['params']['name']
-    n = request['query'].get('n', 3)
-    return "Hello " * n + name
-```
+1. Accessing dynamic path params:
+    ```py
+    # say hello `n` times
+    s.register('GET /hello/:name/:n')
+    def hello(request):
+        name, n = request['params']['name'], request['params']['n']
+        return "Hello " * int(n) + name
+    ```
+
+1. Accessing query params:
+    ```py
+    # say hello `n` times
+    # read n from query params
+    # with default value of 3
+    s.register('GET /hello/:name')
+    def hello(request):
+        name = request['params']['name']
+        n = request['query'].get('n', 3)
+        return "Hello " * n + name
+    ```
 
 ## Response Handling
 
@@ -171,7 +182,7 @@ You can chain multiple middlwares together
 ```py
 def log_middleware(next):
     def handler(request):
-        # do your loggin logic here
+        # do your logging logic here
         return next(request)
     return handler
 
@@ -192,9 +203,9 @@ To run the server:
 
 ```python
 if __name__ == "__main__":
-    s = Server(port=8080)
+    s = Server()
     # Register your routes here
-    s.start_server()
+    s.start_server(port=8080)
 ```
 
 ## Contributing

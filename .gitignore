@@ -2,4 +2,5 @@ __pycache__
 .venv
 dist
 build
-.egg-info
+*.egg-info
+*.sh
