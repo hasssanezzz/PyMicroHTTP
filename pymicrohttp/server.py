@@ -147,7 +147,7 @@ class Server:
 
 
     def __is_path_valid(self, path: str) -> bool:
-        pattern = r'^(GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) /[^\s]*$'
+        pattern = r'^(\*|GET|POST|PUT|DELETE|HEAD|OPTIONS|PATCH) /[^\s]*$'
         return bool(re.match(pattern, path))
 
 
@@ -206,7 +206,7 @@ class Server:
 
         for route in self.routes:
             route_verb, route_path = route.split(' ')
-            if route_verb == verb:
+            if route_verb == verb or route_verb == '*':
                 params = self.__match_path(route_path, path)
                 if params:
                     return self.routes[route], params

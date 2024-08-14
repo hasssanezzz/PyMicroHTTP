@@ -90,6 +90,16 @@ Following this syntax:
 ```
 VERB /<PATH>
 ```
+### Supported verbs:
+- `*`: to match any verb
+- GET
+- POST
+- PUT
+- PATCH
+- DELETE
+- HEAD
+- OPTIONS
+
 With a signle space separating between the verb and the request path.
 
 Example:
@@ -149,7 +159,7 @@ The request object is a dict containing these key and value:
 
 You can access it via the handler:
 ```py
-@s.register('GET /ping')
+@s.register('* /ping')
 def ping_handler(request):
     # accessing request headers
     if 'double' in request['headers']:
