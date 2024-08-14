@@ -7,12 +7,13 @@ class Server:
     before_all_middlewares = []
 
 
-    def start_server(self, host='localhost', port = 9090):
+    def start_server(self, host='localhost', port = 9090, listen_msg=False):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
             server_socket.bind((host, port))
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.listen()
-            print(f'Server listening on {host}:{port}')
+            if listen_msg:
+                print(f'Server listening on {host}:{port}')
             while True:
                 conn, addr = server_socket.accept()
                 threading.Thread(target=self.__handle_connection, args=(conn,)).start()
